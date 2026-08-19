@@ -33,7 +33,9 @@ function getFavoriteType(item) {
     type === "movie" ||
     type === "tv"
   ) {
+
     return type;
+
   }
 
   return null;
@@ -48,21 +50,31 @@ export function FavoritesProvider({
   children,
 }) {
 
-  const [favorites, setFavorites] =
-    useState([]);
+  // =======================================================
+  // FAVORITES
+  // =======================================================
 
-  const [loading, setLoading] =
-    useState(true);
+  const [
+    favorites,
+    setFavorites,
+  ] = useState([]);
 
 
-  // =========================================================
+  const [
+    loading,
+    setLoading,
+  ] = useState(true);
+
+
+  // =======================================================
   // ABYSS
-  // =========================================================
+  // =======================================================
 
   const [
     abyssRecommendations,
     setAbyssRecommendations,
   ] = useState([]);
+
 
   const [
     abyssLoading,
@@ -70,9 +82,9 @@ export function FavoritesProvider({
   ] = useState(false);
 
 
-  // =========================================================
+  // =======================================================
   // FETCH FAVORITES
-  // =========================================================
+  // =======================================================
 
   const fetchFavorites =
     useCallback(
@@ -88,6 +100,10 @@ export function FavoritesProvider({
             );
 
 
+          // -------------------------------------------------
+          // NO LOGGED-IN USER
+          // -------------------------------------------------
+
           if (!token) {
 
             setFavorites([]);
@@ -98,6 +114,10 @@ export function FavoritesProvider({
 
           }
 
+
+          // -------------------------------------------------
+          // REQUEST
+          // -------------------------------------------------
 
           const response =
             await fetch(
@@ -112,6 +132,10 @@ export function FavoritesProvider({
               }
             );
 
+
+          // -------------------------------------------------
+          // RESPONSE TYPE
+          // -------------------------------------------------
 
           const contentType =
             response.headers.get(
@@ -144,6 +168,10 @@ export function FavoritesProvider({
           }
 
 
+          // -------------------------------------------------
+          // ERROR
+          // -------------------------------------------------
+
           if (!response.ok) {
 
             throw new Error(
@@ -154,12 +182,15 @@ export function FavoritesProvider({
           }
 
 
+          // -------------------------------------------------
+          // SAVE FAVORITES
+          // -------------------------------------------------
+
           setFavorites(
             Array.isArray(data)
               ? data
               : []
           );
-
 
         } catch (error) {
 
@@ -202,6 +233,8 @@ export function FavoritesProvider({
 
     function handleAuthChange() {
 
+      // Clear previous user immediately
+
       setFavorites([]);
 
       setAbyssRecommendations([]);
@@ -242,7 +275,34 @@ export function FavoritesProvider({
 
     async function updateAbyss() {
 
-      if (!favorites.length) {
+      // -----------------------------------------------------
+      // WAIT FOR FAVORITES TO FINISH LOADING
+      // -----------------------------------------------------
+
+      if (loading) {
+
+        console.log(
+          "🌌 ABYSS: Waiting for favorites..."
+        );
+
+        return;
+
+      }
+
+
+      // -----------------------------------------------------
+      // NO FAVORITES
+      // -----------------------------------------------------
+
+      if (
+        !favorites ||
+        favorites.length === 0
+      ) {
+
+        console.log(
+          "🌌 ABYSS: No favorites"
+        );
+
 
         setAbyssRecommendations([]);
 
@@ -253,10 +313,24 @@ export function FavoritesProvider({
       }
 
 
+      // -----------------------------------------------------
+      // START
+      // -----------------------------------------------------
+
       setAbyssLoading(true);
 
 
       try {
+
+        console.log(
+          "🌌 ABYSS INPUT:",
+          favorites
+        );
+
+
+        // ---------------------------------------------------
+        // GENERATE RECOMMENDATIONS
+        // ---------------------------------------------------
 
         const recommendations =
           await generateAbyssRecommendations(
@@ -264,22 +338,42 @@ export function FavoritesProvider({
           );
 
 
-        if (!cancelled) {
+        console.log(
+          "🌌 ABYSS OUTPUT:",
+          recommendations
+        );
 
-          setAbyssRecommendations(
-            Array.isArray(
-              recommendations
-            )
-              ? recommendations
-              : []
-          );
+
+        // ---------------------------------------------------
+        // CANCELLED CHECK
+        // ---------------------------------------------------
+
+        if (cancelled) {
+
+          return;
 
         }
+
+
+        // ---------------------------------------------------
+        // SAVE RECOMMENDATIONS
+        // ---------------------------------------------------
+
+        setAbyssRecommendations(
+
+          Array.isArray(
+            recommendations
+          )
+            ? recommendations
+            : []
+
+        );
+
 
       } catch (error) {
 
         console.error(
-          "ABYSS failed:",
+          "🌌 ABYSS FAILED:",
           error
         );
 
@@ -289,6 +383,7 @@ export function FavoritesProvider({
           setAbyssRecommendations([]);
 
         }
+
 
       } finally {
 
@@ -306,6 +401,10 @@ export function FavoritesProvider({
     updateAbyss();
 
 
+    // -------------------------------------------------------
+    // CLEANUP
+    // -------------------------------------------------------
+
     return () => {
 
       cancelled = true;
@@ -314,6 +413,7 @@ export function FavoritesProvider({
 
   }, [
     favorites,
+    loading,
   ]);
 
 
@@ -331,6 +431,10 @@ export function FavoritesProvider({
         );
 
 
+      // -----------------------------------------------------
+      // NOT LOGGED IN
+      // -----------------------------------------------------
+
       if (!token) {
 
         console.log(
@@ -341,6 +445,10 @@ export function FavoritesProvider({
 
       }
 
+
+      // -----------------------------------------------------
+      // TYPE
+      // -----------------------------------------------------
 
       const type =
         getFavoriteType(item);
@@ -360,6 +468,10 @@ export function FavoritesProvider({
 
       }
 
+
+      // -----------------------------------------------------
+      // POST
+      // -----------------------------------------------------
 
       const response =
         await fetch(
@@ -401,7 +513,10 @@ export function FavoritesProvider({
                       ? (
                           item.release_date ||
                           item.first_air_date
-                        ).slice(0, 4)
+                        ).slice(
+                          0,
+                          4
+                        )
                       : ""
                   ),
 
@@ -419,6 +534,10 @@ export function FavoritesProvider({
           }
         );
 
+
+      // -----------------------------------------------------
+      // RESPONSE TYPE
+      // -----------------------------------------------------
 
       const contentType =
         response.headers.get(
@@ -451,6 +570,10 @@ export function FavoritesProvider({
       }
 
 
+      // -----------------------------------------------------
+      // ERROR
+      // -----------------------------------------------------
+
       if (!response.ok) {
 
         console.error(
@@ -463,18 +586,24 @@ export function FavoritesProvider({
       }
 
 
+      // -----------------------------------------------------
+      // UPDATE STATE
+      // -----------------------------------------------------
+
       setFavorites(
         (previous) => {
 
           const exists =
             previous.some(
               (favorite) =>
+
                 String(
                   favorite.movieId
                 ) ===
                   String(
                     data.movieId
                   ) &&
+
                 favorite.type ===
                   data.type
             );
@@ -525,12 +654,20 @@ export function FavoritesProvider({
         );
 
 
+      // -----------------------------------------------------
+      // NOT LOGGED IN
+      // -----------------------------------------------------
+
       if (!token) {
 
         return;
 
       }
 
+
+      // -----------------------------------------------------
+      // VALIDATE TYPE
+      // -----------------------------------------------------
 
       const normalizedType =
         type === "movie" ||
@@ -551,9 +688,9 @@ export function FavoritesProvider({
       }
 
 
-      // =====================================================
-      // DELETE REQUEST
-      // =====================================================
+      // -----------------------------------------------------
+      // DELETE
+      // -----------------------------------------------------
 
       const response =
         await fetch(
@@ -562,16 +699,19 @@ export function FavoritesProvider({
             method: "DELETE",
 
             headers: {
+
               Authorization:
                 `Bearer ${token}`,
+
             },
+
           }
         );
 
 
-      // =====================================================
-      // SAFELY READ RESPONSE
-      // =====================================================
+      // -----------------------------------------------------
+      // RESPONSE TYPE
+      // -----------------------------------------------------
 
       const contentType =
         response.headers.get(
@@ -604,9 +744,9 @@ export function FavoritesProvider({
       }
 
 
-      // =====================================================
-      // HANDLE ERROR
-      // =====================================================
+      // -----------------------------------------------------
+      // ERROR
+      // -----------------------------------------------------
 
       if (!response.ok) {
 
@@ -620,22 +760,26 @@ export function FavoritesProvider({
       }
 
 
-      // =====================================================
+      // -----------------------------------------------------
       // REMOVE FROM STATE
-      // =====================================================
+      // -----------------------------------------------------
 
       setFavorites(
         (previous) =>
+
           previous.filter(
             (favorite) =>
+
               !(
                 String(
                   favorite.movieId
                 ) ===
                   String(id) &&
+
                 favorite.type ===
                   normalizedType
               )
+
           )
       );
 
@@ -673,10 +817,15 @@ export function FavoritesProvider({
 
     return favorites.some(
       (favorite) =>
+
         String(
           favorite.movieId
-        ) === String(id) &&
-        favorite.type === type
+        ) ===
+          String(id) &&
+
+        favorite.type ===
+          type
+
     );
 
   }
@@ -691,6 +840,10 @@ export function FavoritesProvider({
     <FavoritesContext.Provider
       value={{
 
+        // ---------------------------------------------------
+        // FAVORITES
+        // ---------------------------------------------------
+
         favorites,
 
         loading,
@@ -702,6 +855,11 @@ export function FavoritesProvider({
         isFavorite,
 
         fetchFavorites,
+
+
+        // ---------------------------------------------------
+        // ABYSS
+        // ---------------------------------------------------
 
         abyssRecommendations,
 
