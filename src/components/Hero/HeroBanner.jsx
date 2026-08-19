@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+
 import {
   ChevronLeft,
   ChevronRight,
@@ -16,128 +17,200 @@ import {
   getMovieLogo,
 } from "../../services/movieApi";
 
+
 function HeroBanner() {
+
   const [movies, setMovies] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
 
-  const [trailer, setTrailer] = useState(null);
-  const [logo, setLogo] = useState(null);
+  const [currentIndex, setCurrentIndex] =
+    useState(0);
 
-  const [loading, setLoading] = useState(true);
-  const [assetsLoading, setAssetsLoading] = useState(false);
+  const [trailer, setTrailer] =
+    useState(null);
 
-  const [isPaused, setIsPaused] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
+  const [logo, setLogo] =
+    useState(null);
 
-  const playerRef = useRef(null);
+  const [loading, setLoading] =
+    useState(true);
 
-  const movie = movies[currentIndex];
+  const [assetsLoading, setAssetsLoading] =
+    useState(false);
+
+  const [isPaused, setIsPaused] =
+    useState(false);
+
+  const [isMuted, setIsMuted] =
+    useState(true);
+
+  const playerRef =
+    useRef(null);
+
+  const movie =
+    movies[currentIndex];
 
 
-  /* =====================================================
-     LOAD FEATURED MOVIES
-  ===================================================== */
+  // =====================================================
+  // LOAD FEATURED MOVIES
+  // =====================================================
 
   useEffect(() => {
+
     async function loadFeaturedMovies() {
+
       try {
+
         setLoading(true);
 
-        const data = await getFeaturedMovies();
+        const data =
+          await getFeaturedMovies();
 
-        setMovies(data || []);
+        setMovies(
+          data || []
+        );
+
       } catch (error) {
+
         console.error(
           "Failed to load featured movies:",
           error
         );
+
       } finally {
+
         setLoading(false);
+
       }
+
     }
 
     loadFeaturedMovies();
+
   }, []);
 
 
-  /* =====================================================
-     LOAD TRAILER + LOGO
-  ===================================================== */
+  // =====================================================
+  // LOAD TRAILER + LOGO
+  // =====================================================
 
   useEffect(() => {
+
     if (!movie) return;
 
     let cancelled = false;
 
+
     async function loadMovieAssets() {
+
       setAssetsLoading(true);
 
       // Remove previous movie's trailer/logo
       setTrailer(null);
+
       setLogo(null);
 
       // Every new trailer starts muted
       setIsMuted(true);
 
+
       try {
-        const [trailerData, logoData] =
-          await Promise.all([
-            getMovieVideos(movie.id),
-            getMovieLogo(movie.id),
-          ]);
+
+        const [
+          trailerData,
+          logoData,
+        ] = await Promise.all([
+
+          getMovieVideos(
+            movie.id
+          ),
+
+          getMovieLogo(
+            movie.id
+          ),
+
+        ]);
+
 
         if (cancelled) return;
 
+
         setTrailer(
-          trailerData?.key || null
+          trailerData?.key ||
+          null
         );
 
+
         setLogo(
-          logoData || null
+          logoData ||
+          null
         );
+
+
       } catch (error) {
+
         console.error(
           "Failed to load hero assets:",
           error
         );
+
       } finally {
+
         if (!cancelled) {
+
           setAssetsLoading(false);
+
         }
+
       }
+
     }
+
 
     loadMovieAssets();
 
+
     return () => {
+
       cancelled = true;
+
     };
+
   }, [movie]);
 
 
-  /* =====================================================
-     AUTOPLAY
-
-     Movie changes every 30 seconds
-  ===================================================== */
+  // =====================================================
+  // AUTOPLAY
+  //
+  // Movie changes every 30 seconds
+  // =====================================================
 
   useEffect(() => {
+
     if (
       movies.length <= 1 ||
       isPaused ||
       assetsLoading
     ) {
+
       return;
+
     }
 
+
     const timer = setTimeout(() => {
+
       setCurrentIndex(
         (previous) =>
-          (previous + 1) % movies.length
+          (previous + 1) %
+          movies.length
       );
+
     }, 30000);
 
-    return () => clearTimeout(timer);
+
+    return () =>
+      clearTimeout(timer);
+
   }, [
     currentIndex,
     movies.length,
@@ -146,97 +219,190 @@ function HeroBanner() {
   ]);
 
 
-  /* =====================================================
-     PREVIOUS MOVIE
-  ===================================================== */
+  // =====================================================
+  // PREVIOUS MOVIE
+  // =====================================================
 
   function previousMovie() {
+
     if (!movies.length) return;
+
 
     setCurrentIndex(
       (previous) =>
         (previous - 1 + movies.length) %
         movies.length
     );
+
   }
 
 
-  /* =====================================================
-     NEXT MOVIE
-  ===================================================== */
+  // =====================================================
+  // NEXT MOVIE
+  // =====================================================
 
   function nextMovie() {
+
     if (!movies.length) return;
+
 
     setCurrentIndex(
       (previous) =>
-        (previous + 1) % movies.length
+        (previous + 1) %
+        movies.length
     );
+
   }
 
 
-  /* =====================================================
-     MUTE / UNMUTE
-  ===================================================== */
+  // =====================================================
+  // MUTE / UNMUTE
+  // =====================================================
 
   function toggleMute() {
-    const iframe = playerRef.current;
+
+    const iframe =
+      playerRef.current;
+
 
     if (!iframe) return;
 
+
     iframe.contentWindow.postMessage(
+
       JSON.stringify({
+
         event: "command",
-        func: isMuted
-          ? "unMute"
-          : "mute",
+
+        func:
+          isMuted
+            ? "unMute"
+            : "mute",
+
         args: [],
+
       }),
+
       "*"
+
     );
 
-    setIsMuted(!isMuted);
+
+    setIsMuted(
+      !isMuted
+    );
+
   }
 
 
-  /* =====================================================
-     LOADING
-  ===================================================== */
+  // =====================================================
+  // LOADING
+  // =====================================================
 
   if (loading || !movie) {
+
     return (
-      <section className="relative h-screen min-h-[650px] w-full overflow-hidden bg-[#050505]">
 
-        <div className="absolute inset-0 animate-pulse bg-zinc-950" />
+      <section
+        className="
+          relative
+          h-[100svh]
+          min-h-[600px]
+          w-full
+          overflow-hidden
+          bg-[#050505]
+          md:h-screen
+          md:min-h-[650px]
+        "
+      >
 
-        <div className="absolute bottom-28 left-5 sm:left-10 lg:left-16">
+        <div
+          className="
+            absolute
+            inset-0
+            animate-pulse
+            bg-zinc-950
+          "
+        />
 
-          <div className="h-20 w-80 rounded-lg bg-white/10" />
 
-          <div className="mt-5 h-4 w-80 rounded bg-white/5" />
+        <div
+          className="
+            absolute
+            bottom-28
+            left-5
+            sm:left-10
+            lg:left-16
+          "
+        >
 
-          <div className="mt-6 h-11 w-32 rounded-full bg-white/10" />
+          <div
+            className="
+              h-20
+              w-80
+              rounded-lg
+              bg-white/10
+            "
+          />
+
+
+          <div
+            className="
+              mt-5
+              h-4
+              w-80
+              rounded
+              bg-white/5
+            "
+          />
+
+
+          <div
+            className="
+              mt-6
+              h-11
+              w-32
+              rounded-full
+              bg-white/10
+            "
+          />
 
         </div>
 
       </section>
+
     );
+
   }
 
 
+  // =====================================================
+  // PAGE
+  // =====================================================
+
   return (
+
     <section
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
+      onMouseEnter={() =>
+        setIsPaused(true)
+      }
+
+      onMouseLeave={() =>
+        setIsPaused(false)
+      }
+
       className="
         relative
-        h-screen
-        min-h-[650px]
+        h-[100svh]
+        min-h-[600px]
         w-full
         overflow-hidden
         bg-black
+        md:h-screen
+        md:min-h-[650px]
       "
     >
+
 
       {/* =================================================
           TRAILER / BACKDROP
@@ -247,27 +413,34 @@ function HeroBanner() {
         {trailer ? (
 
           <motion.iframe
+
             key={`trailer-${movie.id}`}
+
             ref={playerRef}
+
 
             initial={{
               opacity: 0,
               scale: 1.03,
             }}
 
+
             animate={{
               opacity: 1,
               scale: 1,
             }}
 
+
             exit={{
               opacity: 0,
             }}
+
 
             transition={{
               duration: 1.2,
               ease: "easeInOut",
             }}
+
 
             className="
               pointer-events-none
@@ -275,52 +448,79 @@ function HeroBanner() {
               left-1/2
               top-1/2
               h-[120%]
-              w-[120%]
+              w-[215%]
               -translate-x-1/2
               -translate-y-1/2
-              scale-[1.15]
+              scale-[1.05]
+
+              sm:h-[120%]
+              sm:w-[180%]
+              sm:scale-[1.08]
+
+              md:h-[120%]
+              md:w-[150%]
+              md:scale-[1.12]
+
+              lg:h-[120%]
+              lg:w-[120%]
+              lg:scale-[1.15]
             "
 
+
             src={`https://www.youtube.com/embed/${trailer}?autoplay=1&mute=1&controls=0&loop=1&playlist=${trailer}&playsinline=1&rel=0&modestbranding=1&enablejsapi=1`}
+
 
             title={
               movie.title ||
               movie.name
             }
 
-            allow="autoplay; encrypted-media"
+
+            allow="
+              autoplay;
+              encrypted-media
+            "
+
           />
 
         ) : (
 
           <motion.img
+
             key={`backdrop-${movie.id}`}
+
 
             initial={{
               opacity: 0,
               scale: 1.03,
             }}
 
+
             animate={{
               opacity: 1,
               scale: 1,
             }}
 
+
             exit={{
               opacity: 0,
             }}
+
 
             transition={{
               duration: 1.2,
               ease: "easeInOut",
             }}
 
+
             src={`https://image.tmdb.org/t/p/original${movie.backdrop_path}`}
+
 
             alt={
               movie.title ||
               movie.name
             }
+
 
             className="
               absolute
@@ -329,6 +529,7 @@ function HeroBanner() {
               w-full
               object-cover
             "
+
           />
 
         )}
@@ -340,7 +541,9 @@ function HeroBanner() {
           BRIGHT CINEMATIC OVERLAYS
       ================================================= */}
 
+
       {/* Very subtle overall tint */}
+
       <div
         className="
           pointer-events-none
@@ -352,6 +555,7 @@ function HeroBanner() {
 
 
       {/* Left side readability */}
+
       <div
         className="
           pointer-events-none
@@ -363,11 +567,15 @@ function HeroBanner() {
           from-black/55
           via-black/20
           to-transparent
+          max-sm:w-[85%]
+          max-sm:from-black/65
+          max-sm:via-black/25
         "
       />
 
 
       {/* Bottom readability */}
+
       <div
         className="
           pointer-events-none
@@ -384,6 +592,7 @@ function HeroBanner() {
 
 
       {/* Very subtle top fade */}
+
       <div
         className="
           pointer-events-none
@@ -403,21 +612,26 @@ function HeroBanner() {
       ================================================= */}
 
       <motion.div
+
         key={`content-${movie.id}`}
+
 
         initial={{
           opacity: 0,
           x: -25,
         }}
 
+
         animate={{
           opacity: 1,
           x: 0,
         }}
 
+
         transition={{
           duration: 0.8,
         }}
+
 
         className="
           relative
@@ -433,15 +647,23 @@ function HeroBanner() {
           className="
             w-full
             px-5
-            pb-24
+            pb-28
+
             sm:px-8
             sm:pb-28
+
             lg:px-12
             xl:px-16
           "
         >
 
-          <div className="max-w-2xl">
+          <div
+            className="
+              max-w-2xl
+              max-sm:max-w-[calc(100vw-2.5rem)]
+            "
+          >
+
 
             {/* =================================================
                 MOVIE LOGO
@@ -450,39 +672,48 @@ function HeroBanner() {
             {logo && (
 
               <motion.img
+
                 key={logo}
+
 
                 initial={{
                   opacity: 0,
                   y: 12,
                 }}
 
+
                 animate={{
                   opacity: 1,
                   y: 0,
                 }}
 
+
                 transition={{
                   duration: 0.7,
                 }}
 
+
                 src={`https://image.tmdb.org/t/p/original${logo}`}
+
 
                 alt={
                   movie.title ||
                   movie.name
                 }
 
+
                 className="
                   mb-5
-                  max-h-28
-                  max-w-[380px]
+                  max-h-24
+                  max-w-[280px]
                   object-contain
                   object-left
                   drop-shadow-2xl
+
                   sm:max-h-36
                   sm:max-w-[480px]
                 "
+
               />
 
             )}
@@ -492,14 +723,18 @@ function HeroBanner() {
                 MOVIE INFORMATION
             ================================================= */}
 
-            <HeroInfo movie={movie} />
+            <HeroInfo
+              movie={movie}
+            />
 
 
             {/* =================================================
                 BUTTONS
             ================================================= */}
 
-            <HeroButtons movie={movie} />
+            <HeroButtons
+              movie={movie}
+            />
 
           </div>
 
@@ -515,12 +750,15 @@ function HeroBanner() {
       {trailer && (
 
         <button
+
           onClick={toggleMute}
+
           aria-label={
             isMuted
               ? "Unmute trailer"
               : "Mute trailer"
           }
+
 
           className="
             absolute
@@ -543,15 +781,24 @@ function HeroBanner() {
             duration-300
             hover:bg-white/[0.15]
             hover:text-white
+
             sm:right-[135px]
+
             lg:right-[140px]
+
+            max-sm:bottom-20
+            max-sm:right-20
           "
         >
 
           {isMuted ? (
+
             <VolumeX size={18} />
+
           ) : (
+
             <Volume2 size={18} />
+
           )}
 
         </button>
@@ -574,13 +821,20 @@ function HeroBanner() {
             flex
             items-center
             gap-2
+
             sm:right-8
+
             lg:right-12
+
+            max-sm:bottom-20
+            max-sm:right-3
           "
         >
 
           <button
+
             onClick={previousMovie}
+
             aria-label="Previous movie"
 
             className="
@@ -601,13 +855,17 @@ function HeroBanner() {
             "
           >
 
-            <ChevronLeft size={19} />
+            <ChevronLeft
+              size={19}
+            />
 
           </button>
 
 
           <button
+
             onClick={nextMovie}
+
             aria-label="Next movie"
 
             className="
@@ -628,7 +886,9 @@ function HeroBanner() {
             "
           >
 
-            <ChevronRight size={19} />
+            <ChevronRight
+              size={19}
+            />
 
           </button>
 
@@ -653,54 +913,68 @@ function HeroBanner() {
             -translate-x-1/2
             items-center
             gap-2
+
+            max-sm:bottom-24
           "
         >
 
-          {movies.map((_, index) => (
+          {movies.map(
+            (_, index) => (
 
-            <button
-              key={index}
-              onClick={() =>
-                setCurrentIndex(index)
-              }
+              <button
 
-              className="
-                flex
-                h-3
-                items-center
-              "
+                key={index}
 
-              aria-label={`Go to slide ${index + 1}`}
-            >
-
-              <motion.span
-                animate={{
-                  width:
-                    currentIndex === index
-                      ? 24
-                      : 6,
-
-                  opacity:
-                    currentIndex === index
-                      ? 1
-                      : 0.3,
-                }}
-
-                transition={{
-                  duration: 0.3,
-                }}
+                onClick={() =>
+                  setCurrentIndex(index)
+                }
 
                 className="
-                  block
-                  h-1.5
-                  rounded-full
-                  bg-white
+                  flex
+                  h-3
+                  items-center
                 "
-              />
 
-            </button>
+                aria-label={
+                  `Go to slide ${index + 1}`
+                }
+              >
 
-          ))}
+                <motion.span
+
+                  animate={{
+
+                    width:
+                      currentIndex === index
+                        ? 24
+                        : 6,
+
+                    opacity:
+                      currentIndex === index
+                        ? 1
+                        : 0.3,
+
+                  }}
+
+
+                  transition={{
+                    duration: 0.3,
+                  }}
+
+
+                  className="
+                    block
+                    h-1.5
+                    rounded-full
+                    bg-white
+                  "
+
+                />
+
+              </button>
+
+            )
+          )}
 
         </div>
 
@@ -726,7 +1000,9 @@ function HeroBanner() {
       />
 
     </section>
+
   );
+
 }
 
 export default HeroBanner;

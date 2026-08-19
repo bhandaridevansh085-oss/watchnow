@@ -11,12 +11,42 @@ import {
 } from "../services/abyssEngine";
 
 
-const FavoritesContext = createContext();
+const FavoritesContext =
+  createContext();
+
 
 const API_URL =
   `${import.meta.env.VITE_API_URL}/api/favorites`;
 
-export function FavoritesProvider({ children }) {
+
+// =========================================================
+// GET VALID FAVORITE TYPE
+// =========================================================
+
+function getFavoriteType(item) {
+
+  const type =
+    item?.type ||
+    item?.media_type;
+
+  if (
+    type === "movie" ||
+    type === "tv"
+  ) {
+    return type;
+  }
+
+  return null;
+}
+
+
+// =========================================================
+// PROVIDER
+// =========================================================
+
+export function FavoritesProvider({
+  children,
+}) {
 
   const [favorites, setFavorites] =
     useState([]);
@@ -24,8 +54,9 @@ export function FavoritesProvider({ children }) {
   const [loading, setLoading] =
     useState(true);
 
+
   // =========================================================
-  // ABYSS RECOMMENDATIONS
+  // ABYSS
   // =========================================================
 
   const [
@@ -40,83 +71,114 @@ export function FavoritesProvider({ children }) {
 
 
   // =========================================================
-  // GET FAVORITES FROM MONGODB
+  // FETCH FAVORITES
   // =========================================================
 
-  const fetchFavorites = useCallback(
-    async () => {
+  const fetchFavorites =
+    useCallback(
+      async () => {
 
-      setLoading(true);
+        setLoading(true);
 
-      try {
+        try {
 
-        const token =
-          localStorage.getItem("token");
+          const token =
+            localStorage.getItem(
+              "token"
+            );
 
 
-        // No logged-in user
+          if (!token) {
 
-        if (!token) {
+            setFavorites([]);
+
+            setAbyssRecommendations([]);
+
+            return;
+
+          }
+
+
+          const response =
+            await fetch(
+              API_URL,
+              {
+                method: "GET",
+
+                headers: {
+                  Authorization:
+                    `Bearer ${token}`,
+                },
+              }
+            );
+
+
+          const contentType =
+            response.headers.get(
+              "content-type"
+            ) || "";
+
+
+          let data = null;
+
+
+          if (
+            contentType.includes(
+              "application/json"
+            )
+          ) {
+
+            data =
+              await response.json();
+
+          } else {
+
+            const text =
+              await response.text();
+
+            console.error(
+              "Favorites server returned non-JSON:",
+              text
+            );
+
+          }
+
+
+          if (!response.ok) {
+
+            throw new Error(
+              data?.message ||
+              `Failed to fetch favorites (${response.status})`
+            );
+
+          }
+
+
+          setFavorites(
+            Array.isArray(data)
+              ? data
+              : []
+          );
+
+
+        } catch (error) {
+
+          console.error(
+            "Failed to fetch favorites:",
+            error
+          );
 
           setFavorites([]);
 
-          return;
+        } finally {
+
+          setLoading(false);
 
         }
 
-
-        const response = await fetch(
-          API_URL,
-          {
-            method: "GET",
-
-            headers: {
-              Authorization:
-                `Bearer ${token}`,
-            },
-          }
-        );
-
-
-        const data =
-          await response.json();
-
-
-        if (!response.ok) {
-
-          throw new Error(
-            data.message ||
-            "Failed to fetch favorites"
-          );
-
-        }
-
-
-        setFavorites(
-          Array.isArray(data)
-            ? data
-            : []
-        );
-
-
-      } catch (error) {
-
-        console.error(
-          "Failed to fetch favorites:",
-          error
-        );
-
-        setFavorites([]);
-
-      } finally {
-
-        setLoading(false);
-
-      }
-
-    },
-    []
-  );
+      },
+      []
+    );
 
 
   // =========================================================
@@ -127,7 +189,9 @@ export function FavoritesProvider({ children }) {
 
     fetchFavorites();
 
-  }, [fetchFavorites]);
+  }, [
+    fetchFavorites,
+  ]);
 
 
   // =========================================================
@@ -137,12 +201,6 @@ export function FavoritesProvider({ children }) {
   useEffect(() => {
 
     function handleAuthChange() {
-
-      /*
-        Clear old user's favorites
-        immediately before loading
-        the new user's favorites.
-      */
 
       setFavorites([]);
 
@@ -168,7 +226,9 @@ export function FavoritesProvider({ children }) {
 
     };
 
-  }, [fetchFavorites]);
+  }, [
+    fetchFavorites,
+  ]);
 
 
   // =========================================================
@@ -181,8 +241,6 @@ export function FavoritesProvider({ children }) {
 
 
     async function updateAbyss() {
-
-      // No favorites = no recommendations
 
       if (!favorites.length) {
 
@@ -254,7 +312,9 @@ export function FavoritesProvider({ children }) {
 
     };
 
-  }, [favorites]);
+  }, [
+    favorites,
+  ]);
 
 
   // =========================================================
@@ -266,7 +326,9 @@ export function FavoritesProvider({ children }) {
     try {
 
       const token =
-        localStorage.getItem("token");
+        localStorage.getItem(
+          "token"
+        );
 
 
       if (!token) {
@@ -280,47 +342,18 @@ export function FavoritesProvider({ children }) {
       }
 
 
-      const response = await fetch(
-        API_URL,
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-
-            Authorization:
-              `Bearer ${token}`,
-          },
-
-          body: JSON.stringify({
-
-            movieId: item.id,
-
-            title: item.title,
-
-            poster: item.poster,
-
-            year: item.year,
-
-            rating: item.rating,
-
-            type: item.type,
-
-          }),
-        }
-      );
+      const type =
+        getFavoriteType(item);
 
 
-      const data =
-        await response.json();
-
-
-      if (!response.ok) {
+      if (
+        type !== "movie" &&
+        type !== "tv"
+      ) {
 
         console.error(
-          data.message ||
-          "Failed to add favorite"
+          "Invalid favorite type:",
+          item
         );
 
         return;
@@ -328,35 +361,139 @@ export function FavoritesProvider({ children }) {
       }
 
 
-      // =====================================================
-      // ADD TO CURRENT USER'S STATE
-      // =====================================================
+      const response =
+        await fetch(
+          API_URL,
+          {
+            method: "POST",
 
-      setFavorites((prev) => {
+            headers: {
 
-        const exists = prev.some(
-          (favorite) =>
-            String(
-              favorite.movieId
-            ) ===
-              String(data.movieId) &&
-            favorite.type === data.type
+              "Content-Type":
+                "application/json",
+
+              Authorization:
+                `Bearer ${token}`,
+
+            },
+
+            body:
+              JSON.stringify({
+
+                movieId:
+                  item.id,
+
+                title:
+                  item.title ||
+                  item.name ||
+                  "",
+
+                poster:
+                  item.poster ||
+                  item.poster_path ||
+                  null,
+
+                year:
+                  item.year ||
+                  (
+                    item.release_date ||
+                    item.first_air_date
+                      ? (
+                          item.release_date ||
+                          item.first_air_date
+                        ).slice(0, 4)
+                      : ""
+                  ),
+
+                rating:
+                  Number(
+                    item.rating ??
+                    item.vote_average ??
+                    0
+                  ),
+
+                type,
+
+              }),
+
+          }
         );
 
 
-        if (exists) {
+      const contentType =
+        response.headers.get(
+          "content-type"
+        ) || "";
 
-          return prev;
+
+      let data = null;
+
+
+      if (
+        contentType.includes(
+          "application/json"
+        )
+      ) {
+
+        data =
+          await response.json();
+
+      } else {
+
+        const text =
+          await response.text();
+
+        console.error(
+          "Add favorite returned non-JSON:",
+          text
+        );
+
+      }
+
+
+      if (!response.ok) {
+
+        console.error(
+          data?.message ||
+          `Failed to add favorite (${response.status})`
+        );
+
+        return;
+
+      }
+
+
+      setFavorites(
+        (previous) => {
+
+          const exists =
+            previous.some(
+              (favorite) =>
+                String(
+                  favorite.movieId
+                ) ===
+                  String(
+                    data.movieId
+                  ) &&
+                favorite.type ===
+                  data.type
+            );
+
+
+          if (exists) {
+
+            return previous;
+
+          }
+
+
+          return [
+            ...previous,
+            data,
+          ];
 
         }
-
-
-        return [
-          ...prev,
-          data,
-        ];
-
-      });
+      );
 
 
     } catch (error) {
@@ -383,7 +520,9 @@ export function FavoritesProvider({ children }) {
     try {
 
       const token =
-        localStorage.getItem("token");
+        localStorage.getItem(
+          "token"
+        );
 
 
       if (!token) {
@@ -393,28 +532,18 @@ export function FavoritesProvider({ children }) {
       }
 
 
-      const response = await fetch(
-        `${API_URL}/${id}`,
-        {
-          method: "DELETE",
-
-          headers: {
-            Authorization:
-              `Bearer ${token}`,
-          },
-        }
-      );
+      const normalizedType =
+        type === "movie" ||
+        type === "tv"
+          ? type
+          : null;
 
 
-      const data =
-        await response.json();
-
-
-      if (!response.ok) {
+      if (!normalizedType) {
 
         console.error(
-          data.message ||
-          "Failed to remove favorite"
+          "Type must be movie or tv:",
+          type
         );
 
         return;
@@ -423,19 +552,91 @@ export function FavoritesProvider({ children }) {
 
 
       // =====================================================
-      // REMOVE FROM CURRENT USER'S STATE
+      // DELETE REQUEST
       // =====================================================
 
-      setFavorites((prev) =>
-        prev.filter(
-          (favorite) =>
-            !(
-              String(
-                favorite.movieId
-              ) === String(id) &&
-              favorite.type === type
-            )
+      const response =
+        await fetch(
+          `${API_URL}/${id}/${normalizedType}`,
+          {
+            method: "DELETE",
+
+            headers: {
+              Authorization:
+                `Bearer ${token}`,
+            },
+          }
+        );
+
+
+      // =====================================================
+      // SAFELY READ RESPONSE
+      // =====================================================
+
+      const contentType =
+        response.headers.get(
+          "content-type"
+        ) || "";
+
+
+      let data = null;
+
+
+      if (
+        contentType.includes(
+          "application/json"
         )
+      ) {
+
+        data =
+          await response.json();
+
+      } else {
+
+        const text =
+          await response.text();
+
+        console.error(
+          "Remove favorite returned non-JSON:",
+          text
+        );
+
+      }
+
+
+      // =====================================================
+      // HANDLE ERROR
+      // =====================================================
+
+      if (!response.ok) {
+
+        console.error(
+          data?.message ||
+          `Failed to remove favorite (${response.status})`
+        );
+
+        return;
+
+      }
+
+
+      // =====================================================
+      // REMOVE FROM STATE
+      // =====================================================
+
+      setFavorites(
+        (previous) =>
+          previous.filter(
+            (favorite) =>
+              !(
+                String(
+                  favorite.movieId
+                ) ===
+                  String(id) &&
+                favorite.type ===
+                  normalizedType
+              )
+          )
       );
 
 
@@ -460,6 +661,16 @@ export function FavoritesProvider({ children }) {
     type
   ) {
 
+    if (
+      type !== "movie" &&
+      type !== "tv"
+    ) {
+
+      return false;
+
+    }
+
+
     return favorites.some(
       (favorite) =>
         String(
@@ -472,7 +683,7 @@ export function FavoritesProvider({ children }) {
 
 
   // =========================================================
-  // CONTEXT
+  // PROVIDER
   // =========================================================
 
   return (
@@ -480,7 +691,6 @@ export function FavoritesProvider({ children }) {
     <FavoritesContext.Provider
       value={{
 
-        // Favorites
         favorites,
 
         loading,
@@ -493,8 +703,6 @@ export function FavoritesProvider({ children }) {
 
         fetchFavorites,
 
-
-        // ABYSS
         abyssRecommendations,
 
         abyssLoading,

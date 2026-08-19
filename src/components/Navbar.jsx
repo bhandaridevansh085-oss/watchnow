@@ -11,8 +11,9 @@ import {
   Home,
   Film,
   Tv,
-  Settings,
   Sparkles,
+  Menu,
+  X,
 } from "lucide-react";
 
 import {
@@ -40,18 +41,28 @@ import NavbarSearch from "./NavbarSearch";
 
 function Navbar() {
 
-  const { favorites } = useFavorites();
+  const { favorites } =
+    useFavorites();
 
-  const navigate = useNavigate();
+  const navigate =
+    useNavigate();
+
 
   const [user, setUser] =
     useState(getUser());
 
+
   const [search, setSearch] =
     useState("");
 
+
   const [showSearch, setShowSearch] =
     useState(false);
+
+
+  const [mobileMenuOpen, setMobileMenuOpen] =
+    useState(false);
+
 
   const searchContainerRef =
     useRef(null);
@@ -64,18 +75,23 @@ function Navbar() {
   useEffect(() => {
 
     const handleAuthChange = () => {
+
       setUser(getUser());
+
     };
+
 
     window.addEventListener(
       "storage",
       handleAuthChange
     );
 
+
     window.addEventListener(
       "focus",
       handleAuthChange
     );
+
 
     return () => {
 
@@ -83,6 +99,7 @@ function Navbar() {
         "storage",
         handleAuthChange
       );
+
 
       window.removeEventListener(
         "focus",
@@ -108,15 +125,19 @@ function Navbar() {
           event.target
         )
       ) {
+
         setShowSearch(false);
+
       }
 
     }
+
 
     document.addEventListener(
       "mousedown",
       handleClick
     );
+
 
     return () => {
 
@@ -131,7 +152,7 @@ function Navbar() {
 
 
   // =====================================================
-  // ESCAPE SEARCH
+  // ESCAPE
   // =====================================================
 
   useEffect(() => {
@@ -139,15 +160,21 @@ function Navbar() {
     function handleEscape(event) {
 
       if (event.key === "Escape") {
+
         setShowSearch(false);
+
+        setMobileMenuOpen(false);
+
       }
 
     }
+
 
     document.addEventListener(
       "keydown",
       handleEscape
     );
+
 
     return () => {
 
@@ -169,13 +196,18 @@ function Navbar() {
 
     if (!search.trim()) return;
 
+
     navigate(
       `/search?q=${encodeURIComponent(search)}`
     );
 
+
     setSearch("");
 
     setShowSearch(false);
+
+    setMobileMenuOpen(false);
+
   }
 
 
@@ -189,12 +221,15 @@ function Navbar() {
 
     setUser(null);
 
+    setMobileMenuOpen(false);
+
     navigate("/login");
+
   }
 
 
   // =====================================================
-  // NAVIGATION LINK
+  // DESKTOP NAV LINK
   // =====================================================
 
   function navLink({
@@ -219,8 +254,54 @@ function Navbar() {
           : "text-white/65 hover:text-white"
       }
     `;
+
   }
 
+
+  // =====================================================
+  // MOBILE NAV LINK
+  // =====================================================
+
+  function mobileNavLink({
+    isActive,
+  }) {
+
+    return `
+      flex
+      w-full
+      items-center
+      gap-4
+      rounded-2xl
+      px-4
+      py-4
+      text-[15px]
+      font-medium
+      transition
+      duration-200
+      ${
+        isActive
+          ? "bg-white text-black"
+          : "text-white/70 hover:bg-white/[0.06] hover:text-white"
+      }
+    `;
+
+  }
+
+
+  // =====================================================
+  // CLOSE MOBILE MENU
+  // =====================================================
+
+  function closeMobileMenu() {
+
+    setMobileMenuOpen(false);
+
+  }
+
+
+  // =====================================================
+  // PAGE
+  // =====================================================
 
   return (
 
@@ -235,6 +316,7 @@ function Navbar() {
       "
     >
 
+
       {/* =================================================
           NAVBAR CONTAINER
       ================================================= */}
@@ -245,12 +327,15 @@ function Navbar() {
           w-full
           items-center
           justify-between
-          px-6
-          pt-6
-          sm:px-8
+          px-4
+          pt-4
+          sm:px-6
+          sm:pt-5
           lg:px-10
+          lg:pt-6
         "
       >
+
 
         {/* =================================================
             LOGO
@@ -258,6 +343,7 @@ function Navbar() {
 
         <Link
           to="/"
+          onClick={closeMobileMenu}
           className="
             pointer-events-auto
             flex
@@ -272,10 +358,11 @@ function Navbar() {
             src={logo}
             alt="WatchNow"
             className="
-              h-12
+              h-10
               w-auto
               object-contain
-              sm:h-14
+              sm:h-12
+              lg:h-14
             "
           />
 
@@ -295,8 +382,9 @@ function Navbar() {
           "
         >
 
+
           {/* =================================================
-              MAIN GLASS NAVBAR
+              DESKTOP NAVBAR
           ================================================= */}
 
           <nav
@@ -315,6 +403,7 @@ function Navbar() {
             "
           >
 
+
             {/* HOME */}
 
             <NavLink
@@ -328,7 +417,9 @@ function Navbar() {
               }) => (
 
                 <>
+
                   {isActive && (
+
                     <motion.div
                       layoutId="activeNav"
                       className="
@@ -343,56 +434,90 @@ function Navbar() {
                         damping: 30,
                       }}
                     />
+
                   )}
 
-                  <span className="relative z-10 flex items-center gap-2">
+                  <span
+                    className="
+                      relative
+                      z-10
+                      flex
+                      items-center
+                      gap-2
+                    "
+                  >
+
                     <Home size={16} />
 
                     <span>
                       Home
                     </span>
+
                   </span>
+
                 </>
 
               )}
 
             </NavLink>
+
+
             {/* ABYSS */}
-<NavLink
-  to="/abyss"
-  className={navLink}
->
-  {({ isActive }) => (
-    <>
-      {isActive && (
-        <motion.div
-          layoutId="activeNav"
-          className="
-            absolute
-            inset-0
-            rounded-full
-            bg-white
-          "
-          transition={{
-            type: "spring",
-            stiffness: 400,
-            damping: 30,
-          }}
-        />
-      )}
 
-      <span className="relative z-10 flex items-center gap-2">
+            <NavLink
+              to="/abyss"
+              className={navLink}
+            >
 
-        <Sparkles size={16} />
+              {({
+                isActive,
+              }) => (
 
-        <span>
-          Abyss
-        </span>
+                <>
 
-      </span>
-    </>
-  )}
-</NavLink>
+                  {isActive && (
+
+                    <motion.div
+                      layoutId="activeNav"
+                      className="
+                        absolute
+                        inset-0
+                        rounded-full
+                        bg-white
+                      "
+                      transition={{
+                        type: "spring",
+                        stiffness: 400,
+                        damping: 30,
+                      }}
+                    />
+
+                  )}
+
+                  <span
+                    className="
+                      relative
+                      z-10
+                      flex
+                      items-center
+                      gap-2
+                    "
+                  >
+
+                    <Sparkles size={16} />
+
+                    <span>
+                      Abyss
+                    </span>
+
+                  </span>
+
+                </>
+
+              )}
+
+            </NavLink>
+
 
             {/* MOVIES */}
 
@@ -406,7 +531,9 @@ function Navbar() {
               }) => (
 
                 <>
+
                   {isActive && (
+
                     <motion.div
                       layoutId="activeNav"
                       className="
@@ -421,15 +548,27 @@ function Navbar() {
                         damping: 30,
                       }}
                     />
+
                   )}
 
-                  <span className="relative z-10 flex items-center gap-2">
+                  <span
+                    className="
+                      relative
+                      z-10
+                      flex
+                      items-center
+                      gap-2
+                    "
+                  >
+
                     <Film size={16} />
 
                     <span>
                       Movies
                     </span>
+
                   </span>
+
                 </>
 
               )}
@@ -449,7 +588,9 @@ function Navbar() {
               }) => (
 
                 <>
+
                   {isActive && (
+
                     <motion.div
                       layoutId="activeNav"
                       className="
@@ -464,15 +605,27 @@ function Navbar() {
                         damping: 30,
                       }}
                     />
+
                   )}
 
-                  <span className="relative z-10 flex items-center gap-2">
+                  <span
+                    className="
+                      relative
+                      z-10
+                      flex
+                      items-center
+                      gap-2
+                    "
+                  >
+
                     <Tv size={16} />
 
                     <span>
                       Shows
                     </span>
+
                   </span>
+
                 </>
 
               )}
@@ -492,7 +645,9 @@ function Navbar() {
               }) => (
 
                 <>
+
                   {isActive && (
+
                     <motion.div
                       layoutId="activeNav"
                       className="
@@ -507,9 +662,18 @@ function Navbar() {
                         damping: 30,
                       }}
                     />
+
                   )}
 
-                  <span className="relative z-10 flex items-center gap-2">
+                  <span
+                    className="
+                      relative
+                      z-10
+                      flex
+                      items-center
+                      gap-2
+                    "
+                  >
 
                     <Heart
                       size={16}
@@ -525,9 +689,16 @@ function Navbar() {
                     </span>
 
                     {favorites.length > 0 && (
-                      <span className="text-xs opacity-60">
+
+                      <span
+                        className="
+                          text-xs
+                          opacity-60
+                        "
+                      >
                         {favorites.length}
                       </span>
+
                     )}
 
                   </span>
@@ -547,25 +718,28 @@ function Navbar() {
 
           <div
             ref={searchContainerRef}
-            className="relative"
+            className="
+              relative
+            "
           >
 
             <button
               onClick={() =>
                 setShowSearch(
-                  (previous) => !previous
+                  (previous) =>
+                    !previous
                 )
               }
               className="
                 flex
-                h-12
-                w-12
+                h-10
+                w-10
                 items-center
                 justify-center
                 rounded-full
                 border
                 border-white/10
-                bg-black/30
+                bg-black/40
                 text-white
                 shadow-[0_8px_30px_rgba(0,0,0,0.2)]
                 backdrop-blur-2xl
@@ -573,10 +747,14 @@ function Navbar() {
                 duration-300
                 hover:scale-105
                 hover:bg-white/10
+                sm:h-12
+                sm:w-12
               "
             >
 
-              <Search size={19} />
+              <Search
+                size={18}
+              />
 
             </button>
 
@@ -606,8 +784,12 @@ function Navbar() {
                   className="
                     absolute
                     right-0
-                    top-12
+                    top-10
                     z-[99999]
+                    w-[calc(100vw-2rem)]
+                    max-w-[380px]
+                    sm:top-12
+                    sm:w-[380px]
                   "
                 >
 
@@ -627,49 +809,17 @@ function Navbar() {
 
 
           {/* =================================================
-              USER / SETTINGS
+              USER
           ================================================= */}
 
           {user ? (
 
-            <div className="flex items-center gap-2">
-
-              <Link
-                to="/profile"
-                title="Profile"
-                className="
-                  flex
-                  h-12
-                  w-12
-                  items-center
-                  justify-center
-                  rounded-full
-                  border
-                  border-white/10
-                  bg-black/30
-                  text-white
-                  shadow-[0_8px_30px_rgba(0,0,0,0.2)]
-                  backdrop-blur-2xl
-                  transition
-                  duration-300
-                  hover:scale-105
-                  hover:bg-white/10
-                "
-              >
-
-                <User size={19} />
-
-              </Link>
-
-            </div>
-
-          ) : (
-
             <Link
-              to="/login"
-              title="Login"
+              to="/profile"
+              title="Profile"
+              onClick={closeMobileMenu}
               className="
-                flex
+                hidden
                 h-12
                 w-12
                 items-center
@@ -685,6 +835,38 @@ function Navbar() {
                 duration-300
                 hover:scale-105
                 hover:bg-white/10
+                md:flex
+              "
+            >
+
+              <User size={19} />
+
+            </Link>
+
+          ) : (
+
+            <Link
+              to="/login"
+              title="Login"
+              onClick={closeMobileMenu}
+              className="
+                hidden
+                h-12
+                w-12
+                items-center
+                justify-center
+                rounded-full
+                border
+                border-white/10
+                bg-black/30
+                text-white
+                shadow-[0_8px_30px_rgba(0,0,0,0.2)]
+                backdrop-blur-2xl
+                transition
+                duration-300
+                hover:scale-105
+                hover:bg-white/10
+                md:flex
               "
             >
 
@@ -694,13 +876,299 @@ function Navbar() {
 
           )}
 
+
+          {/* =================================================
+              MOBILE MENU BUTTON
+          ================================================= */}
+
+          <button
+            onClick={() =>
+              setMobileMenuOpen(
+                (previous) =>
+                  !previous
+              )
+            }
+            aria-label={
+              mobileMenuOpen
+                ? "Close menu"
+                : "Open menu"
+            }
+            className="
+              flex
+              h-10
+              w-10
+              items-center
+              justify-center
+              rounded-full
+              border
+              border-white/10
+              bg-black/40
+              text-white
+              shadow-[0_8px_30px_rgba(0,0,0,0.2)]
+              backdrop-blur-2xl
+              transition
+              duration-300
+              hover:bg-white/10
+              md:hidden
+              sm:h-12
+              sm:w-12
+            "
+          >
+
+            <AnimatePresence
+              mode="wait"
+              initial={false}
+            >
+
+              {mobileMenuOpen ? (
+
+                <motion.div
+                  key="close"
+                  initial={{
+                    rotate: -90,
+                    opacity: 0,
+                  }}
+                  animate={{
+                    rotate: 0,
+                    opacity: 1,
+                  }}
+                  exit={{
+                    rotate: 90,
+                    opacity: 0,
+                  }}
+                >
+
+                  <X size={20} />
+
+                </motion.div>
+
+              ) : (
+
+                <motion.div
+                  key="menu"
+                  initial={{
+                    rotate: 90,
+                    opacity: 0,
+                  }}
+                  animate={{
+                    rotate: 0,
+                    opacity: 1,
+                  }}
+                  exit={{
+                    rotate: -90,
+                    opacity: 0,
+                  }}
+                >
+
+                  <Menu size={20} />
+
+                </motion.div>
+
+              )}
+
+            </AnimatePresence>
+
+          </button>
+
         </div>
 
       </div>
 
+
+      {/* =================================================
+          MOBILE MENU
+      ================================================= */}
+
+      <AnimatePresence>
+
+        {mobileMenuOpen && (
+
+          <motion.div
+            initial={{
+              opacity: 0,
+              y: -15,
+            }}
+            animate={{
+              opacity: 1,
+              y: 0,
+            }}
+            exit={{
+              opacity: 0,
+              y: -15,
+            }}
+            transition={{
+              duration: 0.2,
+            }}
+            className="
+              pointer-events-auto
+              mx-4
+              mt-3
+              overflow-hidden
+              rounded-[24px]
+              border
+              border-white/10
+              bg-[#080808]/95
+              p-2
+              shadow-[0_20px_60px_rgba(0,0,0,0.55)]
+              backdrop-blur-2xl
+              sm:mx-6
+              md:hidden
+            "
+          >
+
+            {/* HOME */}
+
+            <NavLink
+              to="/"
+              end
+              onClick={closeMobileMenu}
+              className={mobileNavLink}
+            >
+
+              <Home size={19} />
+
+              <span>
+                Home
+              </span>
+
+            </NavLink>
+
+
+            {/* ABYSS */}
+
+            <NavLink
+              to="/abyss"
+              onClick={closeMobileMenu}
+              className={mobileNavLink}
+            >
+
+              <Sparkles size={19} />
+
+              <span>
+                Abyss
+              </span>
+
+            </NavLink>
+
+
+            {/* MOVIES */}
+
+            <NavLink
+              to="/movies"
+              onClick={closeMobileMenu}
+              className={mobileNavLink}
+            >
+
+              <Film size={19} />
+
+              <span>
+                Movies
+              </span>
+
+            </NavLink>
+
+
+            {/* SHOWS */}
+
+            <NavLink
+              to="/shows"
+              onClick={closeMobileMenu}
+              className={mobileNavLink}
+            >
+
+              <Tv size={19} />
+
+              <span>
+                Shows
+              </span>
+
+            </NavLink>
+
+
+            {/* MY LIST */}
+
+            <NavLink
+              to="/favorites"
+              onClick={closeMobileMenu}
+              className={mobileNavLink}
+            >
+
+              <Heart
+                size={19}
+                fill="currentColor"
+              />
+
+              <span>
+                My List
+              </span>
+
+              {favorites.length > 0 && (
+
+                <span
+                  className="
+                    ml-auto
+                    rounded-full
+                    bg-white/10
+                    px-2
+                    py-1
+                    text-xs
+                  "
+                >
+                  {favorites.length}
+                </span>
+
+              )}
+
+            </NavLink>
+
+
+            {/* PROFILE / LOGIN */}
+
+            {user ? (
+
+              <NavLink
+                to="/profile"
+                onClick={closeMobileMenu}
+                className={mobileNavLink}
+              >
+
+                <User size={19} />
+
+                <span>
+                  Profile
+                </span>
+
+              </NavLink>
+
+            ) : (
+
+              <NavLink
+                to="/login"
+                onClick={closeMobileMenu}
+                className={mobileNavLink}
+              >
+
+                <User size={19} />
+
+                <span>
+                  Login
+                </span>
+
+              </NavLink>
+
+            )}
+
+          </motion.div>
+
+        )}
+
+      </AnimatePresence>
+
     </header>
 
   );
+
 }
+
 
 export default Navbar;
