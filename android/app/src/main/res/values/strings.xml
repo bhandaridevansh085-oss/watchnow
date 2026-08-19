@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">watchnow</string>
+    <string name="title_activity_main">watchnow</string>
+    <string name="package_name">com.devansh.watchnow</string>
+    <string name="custom_url_scheme">com.devansh.watchnow</string>
+</resources>
