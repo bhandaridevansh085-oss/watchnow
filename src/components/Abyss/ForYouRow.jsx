@@ -14,8 +14,19 @@ function ForYouRow({
   loading = false,
 }) {
 
-  const rowRef =
-    useRef(null);
+  const rowRef = useRef(null);
+
+
+  // =====================================================
+  // DEBUG
+  // =====================================================
+
+  console.log(
+    "🌌 FOR YOU ROW:",
+    recommendations,
+    "loading:",
+    loading
+  );
 
 
   // =====================================================
@@ -25,7 +36,6 @@ function ForYouRow({
   function scrollLeft() {
 
     if (!rowRef.current) return;
-
 
     rowRef.current.scrollBy({
       left: -900,
@@ -43,7 +53,6 @@ function ForYouRow({
 
     if (!rowRef.current) return;
 
-
     rowRef.current.scrollBy({
       left: 900,
       behavior: "smooth",
@@ -58,30 +67,25 @@ function ForYouRow({
 
   if (loading) {
 
+    console.log(
+      "🌌 FOR YOU: Loading..."
+    );
+
+
     return (
 
       <section
         className="
           relative
+          z-20
           w-full
           py-10
         "
       >
 
-        <div
-          className="
-            mb-6
-            px-8
-          "
-        >
+        <div className="mb-6 px-8">
 
-          <div
-            className="
-              flex
-              items-center
-              gap-3
-            "
-          >
+          <div className="flex items-center gap-3">
 
             <div
               className="
@@ -109,6 +113,7 @@ function ForYouRow({
                 className="
                   text-3xl
                   font-bold
+                  text-white
                 "
               >
                 For You
@@ -132,8 +137,6 @@ function ForYouRow({
 
         </div>
 
-
-        {/* Loading cards */}
 
         <div
           className="
@@ -178,15 +181,24 @@ function ForYouRow({
   // =====================================================
 
   if (
-    !Array.isArray(
-      recommendations
-    ) ||
-    !recommendations.length
+    !Array.isArray(recommendations) ||
+    recommendations.length === 0
   ) {
+
+    console.log(
+      "🌌 FOR YOU: No recommendations"
+    );
 
     return null;
 
   }
+
+
+  console.log(
+    "🌌 FOR YOU: Rendering",
+    recommendations.length,
+    "cards"
+  );
 
 
   // =====================================================
@@ -198,7 +210,10 @@ function ForYouRow({
     <section
       className="
         relative
+        z-20
+        block
         w-full
+        bg-transparent
         py-10
       "
     >
@@ -248,6 +263,7 @@ function ForYouRow({
               className="
                 text-3xl
                 font-bold
+                text-white
               "
             >
               For You
@@ -278,6 +294,7 @@ function ForYouRow({
       <div
         className="
           relative
+          w-full
         "
       >
 
@@ -305,7 +322,6 @@ function ForYouRow({
             border-white/10
             bg-black/80
             text-white
-            opacity-100
             shadow-xl
             backdrop-blur-md
             transition-all
@@ -314,9 +330,7 @@ function ForYouRow({
             hover:bg-black
           "
 
-          aria-label="
-            Previous recommendations
-          "
+          aria-label="Previous recommendations"
         >
 
           <ChevronLeft
@@ -335,6 +349,7 @@ function ForYouRow({
 
           className="
             flex
+            w-full
             gap-6
             overflow-x-auto
             scroll-smooth
@@ -351,63 +366,65 @@ function ForYouRow({
           {recommendations.map(
             (item, index) => {
 
-              // =================================================
-              // ABYSS FAVORITE OBJECT
-              //
-              // movieId
-              // title
-              // poster
-              // year
-              // rating
-              // type
-              // =================================================
-
               const movieId =
-                item.movieId ??
-                item.id;
+                item?.movieId ??
+                item?.id;
 
 
               const title =
-                item.title ||
-                item.name ||
+                item?.title ||
+                item?.name ||
                 "Untitled";
 
 
               const poster =
-                item.poster ||
-                item.poster_path ||
+                item?.poster ||
+                item?.poster_path ||
                 null;
 
 
               const rating =
                 Number(
-                  item.rating ??
-                  item.vote_average ??
+                  item?.rating ??
+                  item?.vote_average ??
                   0
                 );
 
 
               const type =
-                item.type ||
-                item.media_type ||
+                item?.type ||
+                item?.media_type ||
                 "movie";
 
 
               const year =
-                item.year ||
+                item?.year ||
                 (
-                  item.release_date
+                  item?.release_date
                     ? item.release_date.slice(
                         0,
                         4
                       )
-                    : item.first_air_date
+                    : item?.first_air_date
                       ? item.first_air_date.slice(
                           0,
                           4
                         )
                       : ""
                 );
+
+
+              console.log(
+                "🌌 FOR YOU CARD:",
+                {
+                  movieId,
+                  title,
+                  poster,
+                  rating,
+                  type,
+                  year,
+                }
+              );
 
 
               return (
@@ -419,6 +436,7 @@ function ForYouRow({
 
                   className="
                     w-[220px]
+                    min-w-[220px]
                     flex-shrink-0
                   "
                 >
@@ -429,32 +447,38 @@ function ForYouRow({
                       movieId
                     }
 
+                    movieId={
+                      movieId
+                    }
 
                     title={
                       title
                     }
 
-
                     name={
-                      item.name ||
+                      item?.name ||
                       title
                     }
-
 
                     poster={
                       poster
                     }
 
+                    poster_path={
+                      item?.poster_path
+                    }
 
                     year={
                       year
                     }
 
-
                     rating={
                       rating
                     }
 
+                    vote_average={
+                      item?.vote_average
+                    }
 
                     mediaType={
                       type
@@ -495,7 +519,6 @@ function ForYouRow({
             border-white/10
             bg-black/80
             text-white
-            opacity-100
             shadow-xl
             backdrop-blur-md
             transition-all
@@ -504,9 +527,7 @@ function ForYouRow({
             hover:bg-black
           "
 
-          aria-label="
-            Next recommendations
-          "
+          aria-label="Next recommendations"
         >
 
           <ChevronRight

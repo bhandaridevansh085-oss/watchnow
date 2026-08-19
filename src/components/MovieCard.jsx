@@ -1,23 +1,41 @@
 import { useNavigate } from "react-router-dom";
-import { Star, Play, Heart } from "lucide-react";
+
+import {
+  Star,
+  Play,
+  Heart,
+} from "lucide-react";
+
 import { motion } from "framer-motion";
 
-import { useFavorites } from "../context/FavoritesContext";
+import {
+  useFavorites,
+} from "../context/FavoritesContext";
+
 
 function MovieCard({
   id,
+  movieId,
+
   title,
   name,
+
   year,
   release_date,
   first_air_date,
+
   poster,
   poster_path,
+
   rating = 0,
   vote_average,
+
   mediaType,
 }) {
-  const navigate = useNavigate();
+
+  const navigate =
+    useNavigate();
+
 
   const {
     addFavorite,
@@ -25,82 +43,174 @@ function MovieCard({
     isFavorite,
   } = useFavorites();
 
-  // ==========================================
-  // DATA
-  // ==========================================
 
-  const mediaTitle = title || name;
+  // =====================================================
+  // DATA
+  // =====================================================
+
+  const actualId =
+    id ?? movieId;
+
+
+  const mediaTitle =
+    title ||
+    name ||
+    "Untitled";
+
 
   const mediaYear =
     year ||
     release_date?.slice(0, 4) ||
     first_air_date?.slice(0, 4);
 
+
   const mediaPoster =
-    poster || poster_path;
+    poster ||
+    poster_path;
+
 
   const mediaRating =
-    rating || vote_average || 0;
+    Number(
+      rating ??
+      vote_average ??
+      0
+    );
+
 
   const actualMediaType =
     mediaType ||
-    (name && !title ? "tv" : "movie");
+    (
+      name && !title
+        ? "tv"
+        : "movie"
+    );
 
-  // ==========================================
+
+  // =====================================================
   // FAVORITE
-  // ==========================================
+  // =====================================================
 
-  const favorite = isFavorite(
-    id,
-    actualMediaType
-  );
+  const favorite =
+    isFavorite(
+      actualId,
+      actualMediaType
+    );
 
-  // ==========================================
+
+  // =====================================================
   // CARD CLICK
-  // ==========================================
+  // =====================================================
 
   function handleCardClick() {
-    if (actualMediaType === "tv") {
-      navigate(`/tv/${id}`);
-    } else {
-      navigate(`/movie/${id}`);
+
+    if (!actualId) {
+      return;
     }
+
+
+    if (
+      actualMediaType === "tv"
+    ) {
+
+      navigate(
+        `/tv/${actualId}`
+      );
+
+    } else {
+
+      navigate(
+        `/movie/${actualId}`
+      );
+
+    }
+
   }
 
-  // ==========================================
-  // FAVORITE CLICK
-  // ==========================================
 
-  function handleFavoriteClick(e) {
-    e.stopPropagation();
+  // =====================================================
+  // FAVORITE CLICK
+  // =====================================================
+
+  function handleFavoriteClick(
+    event
+  ) {
+
+    event.stopPropagation();
+
+
+    if (!actualId) {
+
+      console.error(
+        "MovieCard has no ID:",
+        {
+          id,
+          movieId,
+          mediaTitle,
+        }
+      );
+
+      return;
+
+    }
+
 
     if (favorite) {
+
       removeFavorite(
-        id,
+        actualId,
         actualMediaType
       );
+
     } else {
+
       addFavorite({
-        id,
-        title: mediaTitle,
-        poster: mediaPoster,
-        year: mediaYear,
-        rating: mediaRating,
-        type: actualMediaType,
+
+        id:
+          actualId,
+
+        title:
+          mediaTitle,
+
+        poster:
+          mediaPoster,
+
+        year:
+          mediaYear,
+
+        rating:
+          mediaRating,
+
+        type:
+          actualMediaType,
+
       });
+
     }
+
   }
 
+
+  // =====================================================
+  // CARD
+  // =====================================================
+
   return (
+
     <motion.div
+
       whileHover={{
         y: -5,
       }}
+
       transition={{
         duration: 0.2,
         ease: "easeOut",
       }}
-      onClick={handleCardClick}
+
+      onClick={
+        handleCardClick
+      }
+
       className="
         group
         w-[185px]
@@ -112,9 +222,9 @@ function MovieCard({
       "
     >
 
-      {/* ==========================================
+      {/* =================================================
           POSTER
-      ========================================== */}
+      ================================================= */}
 
       <div
         className="
@@ -127,16 +237,33 @@ function MovieCard({
         "
       >
 
-        {/* POSTER */}
-
         <img
+
           src={
+
             mediaPoster
+
               ? `https://image.tmdb.org/t/p/w500${mediaPoster}`
-              : "https://via.placeholder.com/500x750"
+
+              : "/placeholder-poster.jpg"
+
           }
-          alt={mediaTitle}
+
+          alt={
+            mediaTitle
+          }
+
           loading="lazy"
+
+          onError={(
+            event
+          ) => {
+
+            event.currentTarget.src =
+              "/placeholder-poster.jpg";
+
+          }}
+
           className="
             h-full
             w-full
@@ -149,9 +276,9 @@ function MovieCard({
         />
 
 
-        {/* ========================================
-            HOVER DARK OVERLAY
-        ======================================== */}
+        {/* =================================================
+            HOVER OVERLAY
+        ================================================= */}
 
         <div
           className="
@@ -165,9 +292,9 @@ function MovieCard({
         />
 
 
-        {/* ========================================
+        {/* =================================================
             BOTTOM GRADIENT
-        ======================================== */}
+        ================================================= */}
 
         <div
           className="
@@ -188,9 +315,9 @@ function MovieCard({
         />
 
 
-        {/* ========================================
+        {/* =================================================
             RATING
-        ======================================== */}
+        ================================================= */}
 
         <div
           className="
@@ -210,6 +337,7 @@ function MovieCard({
             backdrop-blur-md
           "
         >
+
           <Star
             size={11}
             fill="currentColor"
@@ -217,22 +345,28 @@ function MovieCard({
           />
 
           <span>
-            {Number(mediaRating).toFixed(1)}
+            {mediaRating.toFixed(1)}
           </span>
+
         </div>
 
 
-        {/* ========================================
+        {/* =================================================
             FAVORITE
-        ======================================== */}
+        ================================================= */}
 
         <button
-          onClick={handleFavoriteClick}
+
+          onClick={
+            handleFavoriteClick
+          }
+
           aria-label={
             favorite
               ? "Remove from favorites"
               : "Add to favorites"
           }
+
           className="
             absolute
             right-2.5
@@ -254,25 +388,31 @@ function MovieCard({
             group-hover:opacity-100
           "
         >
+
           <Heart
+
             size={15}
+
             fill={
               favorite
                 ? "currentColor"
                 : "none"
             }
+
             className={
               favorite
                 ? "text-red-500"
                 : "text-white"
             }
+
           />
+
         </button>
 
 
-        {/* ========================================
-            PLAY BUTTON
-        ======================================== */}
+        {/* =================================================
+            PLAY
+        ================================================= */}
 
         <div
           className="
@@ -284,11 +424,14 @@ function MovieCard({
             justify-center
           "
         >
+
           <motion.div
+
             initial={{
               scale: 0.8,
               opacity: 0,
             }}
+
             className="
               flex
               h-14
@@ -306,18 +449,21 @@ function MovieCard({
               group-hover:opacity-100
             "
           >
+
             <Play
               size={21}
               fill="currentColor"
               className="ml-0.5"
             />
+
           </motion.div>
+
         </div>
 
 
-        {/* ========================================
-            HOVER INFORMATION
-        ======================================== */}
+        {/* =================================================
+            INFORMATION
+        ================================================= */}
 
         <div
           className="
@@ -334,6 +480,7 @@ function MovieCard({
             group-hover:opacity-100
           "
         >
+
           <h2
             className="
               line-clamp-2
@@ -346,7 +493,9 @@ function MovieCard({
             {mediaTitle}
           </h2>
 
+
           {mediaYear && (
+
             <p
               className="
                 mt-1
@@ -356,12 +505,18 @@ function MovieCard({
             >
               {mediaYear}
             </p>
+
           )}
+
         </div>
 
       </div>
+
     </motion.div>
+
   );
+
 }
+
 
 export default MovieCard;
