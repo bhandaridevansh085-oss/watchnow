@@ -7,90 +7,98 @@ import {
 // =========================================================
 // ABYSS ENGINE
 // =========================================================
+//
+// Takes the user's complete favorites array.
+//
+// Example:
+//
+// generateAbyssRecommendations([
+//   favorite1,
+//   favorite2,
+//   favorite3
+// ])
+//
+// =========================================================
 
 export async function generateAbyssRecommendations(
-  first,
-  second
+  favorites
 ) {
 
   console.log(
     "🌌 ABYSS:",
-    first,
-    second
+    favorites
   );
 
 
-  if (!first || !second) {
+  // =======================================================
+  // VALIDATE
+  // =======================================================
+
+  if (
+    !Array.isArray(favorites) ||
+    favorites.length === 0
+  ) {
+
     return [];
+
   }
 
 
   // =======================================================
-  // GET RECOMMENDATIONS FROM BOTH
+  // GET RECOMMENDATIONS FROM ALL FAVORITES
   // =======================================================
 
-  const [
-    firstResults,
-    secondResults,
-  ] = await Promise.all([
+  const recommendationResults =
+    await Promise.all(
 
-    getRecommendations(first),
+      favorites.map(
+        async (favorite) => {
 
-    getRecommendations(second),
+          const results =
+            await getRecommendations(
+              favorite
+            );
 
-  ]);
+          return {
+            favorite,
+            results,
+          };
 
+        }
+      )
 
-  console.log(
-    "🌌 First recommendations:",
-    firstResults.length
-  );
-
-  console.log(
-    "🌌 Second recommendations:",
-    secondResults.length
-  );
+    );
 
 
   // =======================================================
   // CREATE CANDIDATE MAP
   // =======================================================
 
-  const candidates = new Map();
+  const candidates =
+    new Map();
 
 
-  // -------------------------------------------------------
-  // ADD FIRST RESULTS
-  // -------------------------------------------------------
+  // =======================================================
+  // ADD ALL RECOMMENDATIONS
+  // =======================================================
 
-  firstResults.forEach(
-    (item, index) => {
+  recommendationResults.forEach(
+    ({
+      favorite,
+      results,
+    }) => {
 
-      addCandidate(
-        candidates,
-        item,
-        first,
-        1,
-        index
-      );
+      results.forEach(
+        (item, index) => {
 
-    }
-  );
+          addCandidate(
+            candidates,
+            item,
+            favorite,
+            index
+          );
 
-
-  // -------------------------------------------------------
-  // ADD SECOND RESULTS
-  // -------------------------------------------------------
-
-  secondResults.forEach(
-    (item, index) => {
-
-      addCandidate(
-        candidates,
-        item,
-        second,
-        2,
-        index
+        }
       );
 
     }
@@ -98,20 +106,37 @@ export async function generateAbyssRecommendations(
 
 
   // =======================================================
-  // REMOVE SELECTED TITLES
+  // REMOVE USER'S EXISTING FAVORITES
   // =======================================================
 
-  candidates.delete(
-    `${first.type}-${first.id}`
-  );
+  favorites.forEach(
+    (favorite) => {
 
-  candidates.delete(
-    `${second.type}-${second.id}`
+      const type =
+        favorite.type;
+
+
+      const id =
+        favorite.movieId;
+
+
+      if (
+        type &&
+        id
+      ) {
+
+        candidates.delete(
+          `${type}-${id}`
+        );
+
+      }
+
+    }
   );
 
 
   // =======================================================
-  // SCORE
+  // CONVERT MAP → ARRAY
   // =======================================================
 
   const results =
@@ -119,6 +144,10 @@ export async function generateAbyssRecommendations(
       candidates.values()
     );
 
+
+  // =======================================================
+  // CALCULATE SCORE
+  // =======================================================
 
   results.forEach(
     (candidate) => {
@@ -143,11 +172,14 @@ export async function generateAbyssRecommendations(
 
 
   // =======================================================
-  // FINAL
+  // FINAL RESULTS
   // =======================================================
 
   const finalResults =
-    results.slice(0, 40);
+    results.slice(
+      0,
+      40
+    );
 
 
   console.log(
@@ -170,12 +202,39 @@ async function getRecommendations(
 
   try {
 
-    if (item.type === "tv") {
+    // =====================================================
+    // VALIDATE FAVORITE
+    // =====================================================
+
+    if (
+      !item ||
+      !item.movieId ||
+      !item.type
+    ) {
+
+      console.warn(
+        "🌌 ABYSS: Invalid favorite:",
+        item
+      );
+
+      return [];
+
+    }
+
+
+    // =====================================================
+    // TV
+    // =====================================================
+
+    if (
+      item.type === "tv"
+    ) {
 
       const results =
         await getSimilarTV(
-          item.id
+          item.movieId
         );
+
 
       return normalizeResults(
         results,
@@ -185,9 +244,13 @@ async function getRecommendations(
     }
 
 
+    // =====================================================
+    // MOVIE
+    // =====================================================
+
     const results =
       await getSimilarMovies(
-        item.id
+        item.movieId
       );
 
 
@@ -200,13 +263,14 @@ async function getRecommendations(
   } catch (error) {
 
     console.error(
-      "ABYSS recommendation error:",
+      "🌌 ABYSS recommendation error:",
       error
     );
 
     return [];
 
   }
+
 }
 
 
@@ -219,17 +283,23 @@ function normalizeResults(
   type
 ) {
 
-  if (!Array.isArray(results)) {
+  if (
+    !Array.isArray(results)
+  ) {
+
     return [];
+
   }
 
 
   return results
+
     .filter(
       (item) =>
         item &&
         item.id
     )
+
     .map(
       (item) => ({
 
@@ -256,9 +326,22 @@ function addCandidate(
   map,
   item,
   source,
-  sourceNumber,
   position
 ) {
+
+  if (
+    !item ||
+    !item.id
+  ) {
+
+    return;
+
+  }
+
+
+  // =======================================================
+  // TYPE
+  // =======================================================
 
   const type =
     item.type ||
@@ -269,6 +352,10 @@ function addCandidate(
     );
 
 
+  // =======================================================
+  // KEY
+  // =======================================================
+
   const key =
     `${type}-${item.id}`;
 
@@ -277,7 +364,9 @@ function addCandidate(
   // INITIAL CANDIDATE
   // =======================================================
 
-  if (!map.has(key)) {
+  if (
+    !map.has(key)
+  ) {
 
     map.set(
       key,
@@ -289,15 +378,14 @@ function addCandidate(
 
         score: 0,
 
-        fromFirst: false,
-
-        fromSecond: false,
-
         appearances: 0,
 
-        bestPosition: position,
+        bestPosition:
+          position,
 
         sourceTypes: [],
+
+        sourceFavorites: [],
 
       }
     );
@@ -310,32 +398,15 @@ function addCandidate(
 
 
   // =======================================================
-  // APPEARS IN FIRST
+  // APPEARANCES
   // =======================================================
-
-  if (sourceNumber === 1) {
-
-    candidate.fromFirst = true;
-
-  }
-
-
-  // =======================================================
-  // APPEARS IN SECOND
-  // =======================================================
-
-  if (sourceNumber === 2) {
-
-    candidate.fromSecond = true;
-
-  }
-
 
   candidate.appearances += 1;
 
 
-  // Better position = stronger
-  // recommendation from TMDB.
+  // =======================================================
+  // BEST TMDB POSITION
+  // =======================================================
 
   candidate.bestPosition =
     Math.min(
@@ -349,6 +420,7 @@ function addCandidate(
   // =======================================================
 
   if (
+    source.type &&
     !candidate.sourceTypes.includes(
       source.type
     )
@@ -356,6 +428,27 @@ function addCandidate(
 
     candidate.sourceTypes.push(
       source.type
+    );
+
+  }
+
+
+  // =======================================================
+  // SOURCE FAVORITE
+  // =======================================================
+
+  const sourceKey =
+    `${source.type}-${source.movieId}`;
+
+
+  if (
+    !candidate.sourceFavorites.includes(
+      sourceKey
+    )
+  ) {
+
+    candidate.sourceFavorites.push(
+      sourceKey
     );
 
   }
@@ -375,22 +468,16 @@ function calculateScore(
 
 
   // =======================================================
-  // APPEARS IN BOTH
+  // APPEARS MULTIPLE TIMES
   // =======================================================
 
   if (
-    candidate.fromFirst &&
-    candidate.fromSecond
+    candidate.appearances >= 2
   ) {
-
-    // VERY strong signal
 
     score += 100;
 
   } else {
-
-    // Still useful if only one
-    // recommendation list contains it.
 
     score += 35;
 
@@ -398,11 +485,12 @@ function calculateScore(
 
 
   // =======================================================
-  // MULTIPLE APPEARANCES
+  // ADDITIONAL APPEARANCES
   // =======================================================
 
   score +=
-    candidate.appearances * 20;
+    candidate.appearances *
+    20;
 
 
   // =======================================================
@@ -436,7 +524,8 @@ function calculateScore(
 
   const rating =
     Number(
-      candidate.vote_average || 0
+      candidate.vote_average ||
+      0
     );
 
 
@@ -453,7 +542,8 @@ function calculateScore(
 
   const popularity =
     Number(
-      candidate.popularity || 0
+      candidate.popularity ||
+      0
     );
 
 
