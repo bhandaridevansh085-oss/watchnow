@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Github, Instagram, Mail } from "lucide-react";
+import { Github, Mail } from "lucide-react";
 import logo from "../assets/logo.png";
 
 function Footer() {
@@ -23,6 +23,7 @@ function Footer() {
               save your favorites, and find your next watch.
             </p>
 
+            {/* Social Links */}
             <div className="mt-6 flex items-center gap-4">
               <a
                 href="https://github.com"
@@ -32,16 +33,6 @@ function Footer() {
                 aria-label="GitHub"
               >
                 <Github size={20} />
-              </a>
-
-              <a
-                href="https://instagram.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-zinc-500 transition hover:text-white"
-                aria-label="Instagram"
-              >
-                <Instagram size={20} />
               </a>
 
               <a
@@ -117,7 +108,7 @@ function Footer() {
 
         </div>
 
-        {/* Bottom */}
+        {/* Bottom Footer */}
         <div className="mt-12 flex flex-col gap-5 border-t border-zinc-800 pt-8 text-sm text-zinc-500 md:flex-row md:items-center md:justify-between">
 
           <p>
@@ -126,7 +117,9 @@ function Footer() {
 
           <p>
             Powered by{" "}
-            <span className="text-zinc-400">TMDB</span>
+            <span className="text-zinc-400">
+              TMDB
+            </span>
           </p>
 
         </div>
